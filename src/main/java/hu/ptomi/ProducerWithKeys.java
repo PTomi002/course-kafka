@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 import java.util.UUID;
-import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 
@@ -20,43 +19,33 @@ public class ProducerWithKeys {
 
     public static void main(String[] args) {
         var properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9093");
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.HOST);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
         var producer = new KafkaProducer<String, String>(properties);
 
-        IntStream
-                .range(0, 10)
-                .forEach(i -> {
-                    // same key hashed into the same partition
-                    // check with:  kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group group_one
-                    //            GROUP           TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID     HOST            CLIENT-ID
-                    //            group_one       java_producer_one 0          5               5               0               -               -               -
-                    //            group_one       java_producer_one 1          0               0               0               -               -               -
-                    //            group_one       java_producer_one 2          5               5               0               -               -               -
-                    var record = new ProducerRecord<>(
-                            "java_producer_one",
-                            (i % 2 == 0) ? "0" : "1",
-                            UUID.randomUUID().toString()
-                    );
-                    try {
-                        producer
-                                .send(record, (meta, e) -> {
-                                    if (isNull(e)) {
-                                        log.info(
-                                                nl + "Topic: " + meta.topic() +
-                                                        nl + "Offset: " + meta.offset() +
-                                                        nl + "Partition: " + meta.partition() +
-                                                        nl + "Timestamp: " + meta.timestamp()
-                                        );
-                                    } else
-                                        log.error("Could not produce record!", e);
-                                });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+        for (int i = 0; i < 10; i++) {
+            // same key hashed into the same partition
+            // check with:  kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group group_one
+            //            GROUP           TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID     HOST            CLIENT-ID
+            //            group_one       java_producer_one 0          5               5               0               -               -               -
+            //            group_one       java_producer_one 1          0               0               0               -               -               -
+            //            group_one       java_producer_one 2          5               5               0               -               -               -
+            var record = new ProducerRecord<>(Configuration.TOPIC, (i % 2 == 0) ? "0" : "1", UUID.randomUUID().toString());
+            producer
+                    .send(record, (meta, e) -> {
+                        if (isNull(e)) {
+                            log.info(
+                                    nl + "Topic: " + meta.topic() +
+                                            nl + "Offset: " + meta.offset() +
+                                            nl + "Partition: " + meta.partition() +
+                                            nl + "Timestamp: " + meta.timestamp()
+                            );
+                        } else
+                            log.error("Could not produce record!", e);
+                    });
+        }
 
         producer.flush();
         producer.close();
