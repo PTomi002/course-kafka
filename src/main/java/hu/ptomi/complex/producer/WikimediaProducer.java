@@ -15,6 +15,8 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * SSE (server sent events): https://stream.wikimedia.org/v2/stream/recentchange
@@ -33,6 +35,7 @@ public class WikimediaProducer {
 
     private static final Logger log = LoggerFactory.getLogger(WikimediaProducer.class);
     private static final CountDownLatch shutdownBarrier = new CountDownLatch(1);
+    private static final ThreadFactory factory = Executors.defaultThreadFactory();
 
     private record WikimediaEventHandler<T, R>(KafkaProducer<T, R> producer) implements EventHandler {
 
@@ -52,6 +55,7 @@ public class WikimediaProducer {
         @SuppressWarnings("unchecked")
         public void onMessage(String event, MessageEvent messageEvent) {
             log.info("SSE message received: " + messageEvent.getLastEventId());
+            // async until buffer is full, then it will block the program to let the brokers catch up with this producer
             producer.send(new ProducerRecord<>(Configuration.TOPIC, (R) messageEvent.getData()));
         }
 
@@ -101,7 +105,7 @@ public class WikimediaProducer {
     }
 
     private static Thread eventListenerCloser(EventSource eventSource) {
-        return new Thread(() -> {
+        return factory.newThread(() -> {
             try {
                 log.info("initiate event listener shutdown");
                 eventSource.close();
@@ -115,7 +119,7 @@ public class WikimediaProducer {
     }
 
     private static <T, R> Thread kafkaCloser(KafkaProducer<T, R> producer) {
-        return new Thread(() -> {
+        return factory.newThread(() -> {
             log.info("initiate kafka producer shutdown");
             try {
                 producer.flush();
