@@ -19,10 +19,10 @@ public class ConsumerWithAutoCommit {
 
     public static void main(String[] args) {
         var properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.HOST);
+        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.KAFKA_HOST);
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, Configuration.CONSUMER_GROUP);
+        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, Configuration.KAFKA_CONSUMER_GROUP);
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         properties.setProperty(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, CooperativeStickyAssignor.class.getName());
         // Do manual commit.
@@ -43,7 +43,7 @@ public class ConsumerWithAutoCommit {
                     }
                 }));
 
-        consumer.subscribe(Collections.singleton(Configuration.TOPIC));
+        consumer.subscribe(Collections.singleton(Configuration.KAFKA_TOPIC));
 
         try {
             while (true) {

@@ -19,7 +19,7 @@ public class ProducerWithCallback {
 
     public static void main(String[] args) {
         var properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.HOST);
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.KAFKA_HOST);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
@@ -30,7 +30,7 @@ public class ProducerWithCallback {
             // BUT now we send data in BATCH, so it uses StickyPartitioner strategy, so all the 10 record goes to the same partition
             //      instead of round-robin, it has better performance
             // partitioner.class = class org.apache.kafka.clients.producer.internals.DefaultPartitioner
-            var record = new ProducerRecord<String, String>(Configuration.TOPIC, UUID.randomUUID().toString());
+            var record = new ProducerRecord<String, String>(Configuration.KAFKA_TOPIC, UUID.randomUUID().toString());
             producer
                     .send(record, (meta, e) -> {
                         if (isNull(e)) {

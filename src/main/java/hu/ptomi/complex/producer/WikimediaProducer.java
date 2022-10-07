@@ -40,7 +40,7 @@ public class WikimediaProducer {
     public static void main(String[] args) {
         // setup kafka producer
         var properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.HOST);
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.KAFKA_HOST);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         // some perf. improvement: high throughput (at expense of a bit latency and CPU)
@@ -118,7 +118,7 @@ public class WikimediaProducer {
         public void onMessage(String event, MessageEvent messageEvent) {
             log.info("SSE message received: " + messageEvent.getLastEventId());
             // async until buffer is full, then it will block the program to let the brokers catch up with this producer
-            producer.send(new ProducerRecord<>(Configuration.TOPIC, (R) messageEvent.getData()));
+            producer.send(new ProducerRecord<>(Configuration.KAFKA_TOPIC, (R) messageEvent.getData()));
         }
 
         @Override

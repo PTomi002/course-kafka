@@ -17,10 +17,10 @@ public class Consumer {
 
     public static void main(String[] args) {
         var properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.HOST);
+        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.KAFKA_HOST);
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, Configuration.CONSUMER_GROUP);
+        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, Configuration.KAFKA_CONSUMER_GROUP);
         // With the auto.offset.reset configuration you can steer the behavior of your consumer (as part of a consumer group)
         //      in situations when your Consumer Group has never consumed and committed from a particular topic
         //      or the last committed offset from that Consumer Group was deleted (e.g. through cleanup policy).
@@ -44,7 +44,7 @@ public class Consumer {
                     }
                 }));
 
-        consumer.subscribe(Collections.singleton(Configuration.TOPIC));
+        consumer.subscribe(Collections.singleton(Configuration.KAFKA_TOPIC));
 
         try {
             while (true) {

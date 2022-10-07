@@ -19,7 +19,7 @@ public class ProducerWithKeys {
 
     public static void main(String[] args) {
         var properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.HOST);
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Configuration.KAFKA_HOST);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
@@ -32,7 +32,7 @@ public class ProducerWithKeys {
             //            group_one       java_producer_one 0          5               5               0               -               -               -
             //            group_one       java_producer_one 1          0               0               0               -               -               -
             //            group_one       java_producer_one 2          5               5               0               -               -               -
-            var record = new ProducerRecord<>(Configuration.TOPIC, (i % 2 == 0) ? "0" : "1", UUID.randomUUID().toString());
+            var record = new ProducerRecord<>(Configuration.KAFKA_TOPIC, (i % 2 == 0) ? "0" : "1", UUID.randomUUID().toString());
             producer
                     .send(record, (meta, e) -> {
                         if (isNull(e)) {
