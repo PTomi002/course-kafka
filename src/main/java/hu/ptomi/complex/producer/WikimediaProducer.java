@@ -37,39 +37,6 @@ public class WikimediaProducer {
     private static final CountDownLatch shutdownBarrier = new CountDownLatch(1);
     private static final ThreadFactory factory = Executors.defaultThreadFactory();
 
-    private record WikimediaEventHandler<T, R>(KafkaProducer<T, R> producer) implements EventHandler {
-
-        private static final Logger log = LoggerFactory.getLogger(WikimediaEventHandler.class);
-
-        @Override
-        public void onOpen() {
-            log.info("SSE stream opened");
-        }
-
-        @Override
-        public void onClosed() {
-            log.info("SSE stream closed");
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void onMessage(String event, MessageEvent messageEvent) {
-            log.info("SSE message received: " + messageEvent.getLastEventId());
-            // async until buffer is full, then it will block the program to let the brokers catch up with this producer
-            producer.send(new ProducerRecord<>(Configuration.TOPIC, (R) messageEvent.getData()));
-        }
-
-        @Override
-        public void onComment(String comment) {
-            log.info("SSE comment ignored: " + comment);
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            log.error("Unexpected error happened!", t);
-        }
-    }
-
     public static void main(String[] args) {
         // setup kafka producer
         var properties = new Properties();
@@ -131,4 +98,38 @@ public class WikimediaProducer {
             }
         });
     }
+
+    private record WikimediaEventHandler<T, R>(KafkaProducer<T, R> producer) implements EventHandler {
+
+        private static final Logger log = LoggerFactory.getLogger(WikimediaEventHandler.class);
+
+        @Override
+        public void onOpen() {
+            log.info("SSE stream opened");
+        }
+
+        @Override
+        public void onClosed() {
+            log.info("SSE stream closed");
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void onMessage(String event, MessageEvent messageEvent) {
+            log.info("SSE message received: " + messageEvent.getLastEventId());
+            // async until buffer is full, then it will block the program to let the brokers catch up with this producer
+            producer.send(new ProducerRecord<>(Configuration.TOPIC, (R) messageEvent.getData()));
+        }
+
+        @Override
+        public void onComment(String comment) {
+            log.info("SSE comment ignored: " + comment);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            log.error("Unexpected error happened!", t);
+        }
+    }
+
 }

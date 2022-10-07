@@ -2,8 +2,13 @@
 
 ## Start Infra
 
-`docker-compose up -d`<br />
-`docker exec -it kafka_kafka_1 bash`
+`docker-compose -f docker-compose.kafka.yml up -d`<br />
+`docker-compose -f docker-compose.kafka.yml rm`<br />
+
+`docker-compose -f docker-compose.opensearch.yml up -d`<br />
+`docker-compose -f docker-compose.opensearch.yml rm`<br />
+
+`docker exec -it kafka bash`
 
 ## CLI Commands
 
