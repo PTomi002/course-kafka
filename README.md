@@ -4,9 +4,11 @@
 
 `docker-compose -f docker-compose.kafka.yml up -d`<br />
 `docker-compose -f docker-compose.kafka.yml rm`<br />
+`docker-compose -f docker-compose.kafka.yml restart`<br />
 
 `docker-compose -f docker-compose.opensearch.yml up -d`<br />
 `docker-compose -f docker-compose.opensearch.yml rm`<br />
+`docker-compose -f docker-compose.opensearch.yml restart`<br />
 
 `docker exec -it kafka bash`
 
@@ -65,6 +67,7 @@
 
 `(*) use --execute instead of --dry-run`<br />
 `kafka-consumer-groups.sh --bootstrap-server localhost:9092 --reset-offsets --to-earliest --group group_one --dry-run --all-topics`<br />
+`kafka-consumer-groups.sh --bootstrap-server localhost:9092 --reset-offsets --to-earliest --group group_one --execute --all-topics`<br />
 `kafka-consumer-groups.sh --bootstrap-server localhost:9092 --reset-offsets --shift-by -2 --group group_one --dry-run --all-topics`
 
 | Header        | Meaning           |

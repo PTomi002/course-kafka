@@ -1,5 +1,6 @@
 package hu.ptomi.complex.consumer;
 
+import com.google.gson.JsonParser;
 import hu.ptomi.Configuration;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -12,6 +13,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.opensearch.OpenSearchStatusException;
+import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestClient;
@@ -47,6 +49,14 @@ import java.util.concurrent.ThreadFactory;
  * <p>
  * DELETE /my-first-index/_doc/1
  * DELETE /my-first-index
+ * <p>
+ * delete all doc within an index:
+ * POST kafka_course_os_index/_delete_by_query?conflicts=proceed
+ * {
+ * "query": {
+ * "match_all": {}
+ * }
+ * }
  */
 public class OpenSearchConsumer {
 
@@ -62,6 +72,7 @@ public class OpenSearchConsumer {
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, Configuration.KAFKA_CONSUMER_GROUP);
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         properties.setProperty(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, CooperativeStickyAssignor.class.getName());
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
         var consumer = new KafkaConsumer<String, String>(properties);
 
@@ -74,20 +85,36 @@ public class OpenSearchConsumer {
 
             consumer.subscribe(Collections.singleton(Configuration.KAFKA_TOPIC));
 
+            // polling records
             while (true) {
                 var records = consumer.poll(Duration.ofMillis(3 * 1_000));
-                logger.info("Received: " + records.count() + " records from kafka");
+                logger.info("received: " + records.count() + " records from kafka");
 
-                for (ConsumerRecord<String, String> r : records) {
-                    try {
-                        osClient.index(
-                                new IndexRequest(Configuration.OS_INDEX).source(r.value(), XContentType.JSON),
-                                RequestOptions.DEFAULT
-                        );
-                    } catch (Exception e) {
-                        logger.warn("invalid document, skipping");
+                if (records.count() != 0) {
+                    var bulk = new BulkRequest();
+                    for (ConsumerRecord<String, String> r : records) {
+                        // to make the consumer idempotent we have to provide message id to OpenSearch
+                        try {
+                            // 1. define an id using kafka coordinates or 2. use our data unique id: meta.id -> OpenSearch will handle duplicates!
+//                        var id = r.topic() + "_" + r.partition() + "_" + r.offset();
+                            var id = extractId(r);
+                            bulk.add(
+                                    new IndexRequest(Configuration.OS_INDEX)
+                                            .id(id)
+                                            .source(r.value(), XContentType.JSON)
+                            );
+                        } catch (Exception e) {
+                            logger.warn("invalid document, skipping");
+                        }
+                    }
+
+                    if (bulk.numberOfActions() > 0) {
+                        var bulkResp = osClient.bulk(bulk, RequestOptions.DEFAULT);
+                        logger.info("Inserted: " + bulkResp.getItems().length + " items to OpenSearch");
                     }
                 }
+
+                consumer.commitSync();
             }
 
         } catch (IOException e) {
@@ -97,6 +124,16 @@ public class OpenSearchConsumer {
         } catch (Exception e) {
             logger.error("exception during poll!", e);
         }
+    }
+
+    private static String extractId(ConsumerRecord<String, String> record) {
+        return JsonParser
+                .parseString(record.value())
+                .getAsJsonObject()
+                .get("meta")
+                .getAsJsonObject()
+                .get("id")
+                .getAsString();
     }
 
     private static <T, R> Thread kafkaCloser(Thread t, KafkaConsumer<T, R> consumer) {
