@@ -8,6 +8,8 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.ValueMapper;
+import org.apache.kafka.streams.kstream.ValueMapperWithKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,9 +21,9 @@ import java.util.concurrent.ThreadFactory;
 
 import static org.apache.kafka.common.serialization.Serdes.String;
 
-public class MetricsConsumer {
+public class WikimediaMetricsConsumer {
 
-    private static Logger logger = LoggerFactory.getLogger(MetricsConsumer.class);
+    private static Logger logger = LoggerFactory.getLogger(WikimediaMetricsConsumer.class);
     private static final ThreadFactory factory = Executors.defaultThreadFactory();
     private static final CountDownLatch shutdownBarrier = new CountDownLatch(1);
     private static final Gson gson = new Gson();
@@ -66,30 +68,37 @@ public class MetricsConsumer {
 
         private void setup() {
             in
-                    .mapValues(stream -> {
-                                try {
-                                    return JsonParser
-                                            .parseString(stream)
-                                            .getAsJsonObject()
-                                            .get("bot")
-                                            .getAsBoolean() ? "bot" : "not-bot";
-                                } catch (Exception e) {
-                                    return "not-bot";
-                                }
-                            }
-                    )
+                    .mapValues(getBot())
                     .groupBy((k, botOrNot) -> botOrNot)
                     .count(Materialized.as(STORE))
                     .toStream()
                     .peek((key, value) -> logger.info("Grouped: " + key + "_" + value))
-                    .mapValues((k, v) -> {
-                        try {
-                            return gson.toJson(Map.of(k, v));
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    })
+                    .mapValues(mapToString())
                     .to(Configuration.KAFKA_STREAMS_BOT_COUNT_TOPIC);
+        }
+
+        private ValueMapperWithKey<String, Long, String> mapToString() {
+            return (k, v) -> {
+                try {
+                    return gson.toJson(Map.of(k, v));
+                } catch (Exception e) {
+                    return null;
+                }
+            };
+        }
+
+        private ValueMapper<String, String> getBot() {
+            return stream -> {
+                try {
+                    return JsonParser
+                            .parseString(stream)
+                            .getAsJsonObject()
+                            .get("bot")
+                            .getAsBoolean() ? "bot" : "not-bot";
+                } catch (Exception e) {
+                    return "not-bot";
+                }
+            };
         }
     }
 

@@ -7,12 +7,45 @@ services:
     ports:
       - "8080:8080"
     depends_on:
+      - schemaregistry
+    environment:
+      KAFKA_CLUSTERS_0_NAME: docker
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schemaregistry:8085
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092 # service name
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - kafka-net
+
+  restproxy:
+    container_name: "restproxy"
+    image: confluentinc/cp-kafka-rest:5.1.2
+    restart: always
+    depends_on:
+      - schemaregistry
+    environment:
+      KAFKA_REST_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: "http://schemaregistry:8085"
+      KAFKA_REST_HOST_NAME: restproxy
+      KAFKA_REST_DEBUG: "true"
+    ports:
+      - "8082:8082"
+    networks:
+      - kafka-net
+
+  schemaregistry:
+    container_name: "schemaregistry"
+    image: confluentinc/cp-schema-registry:5.1.2
+    restart: always
+    depends_on:
       - zookeeper
       - kafka
     environment:
-      KAFKA_CLUSTERS_0_NAME: docker
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092 # service name
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "PLAINTEXT://kafka:9092"
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8085"
+    ports:
+      - "8085:8085"
     networks:
       - kafka-net
 
@@ -39,10 +72,10 @@ services:
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
     depends_on:
       - zookeeper
     networks:

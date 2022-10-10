@@ -13,6 +13,14 @@
         <maven.compiler.target>16</maven.compiler.target>
     </properties>
 
+    <!--    would be better in the settings.xml to use mirrors to lookup artifacts-->
+    <repositories>
+        <repository>
+            <id>confluent</id>
+            <url>https://packages.confluent.io/maven/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!--        JSON-->
         <dependency>
@@ -24,12 +32,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.2</version>
+            <version>2.0.3</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.1</version>
+            <version>1.4.3</version>
         </dependency>
         <!--        KAFKA-->
         <dependency>
@@ -42,10 +50,16 @@
             <artifactId>kafka-streams</artifactId>
             <version>3.3.1</version>
         </dependency>
+        <!--        AVRO-->
         <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-streams</artifactId>
-            <version>3.3.1</version>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.11.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
+            <version>7.2.1</version>
         </dependency>
         <!--        OPENSEARCH-->
         <dependency>
@@ -65,5 +79,49 @@
             <version>2.7.1</version>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <!--            GENERATE AVRO-->
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>1.11.1</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${project.basedir}/src/main/resources/avro</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated/avro</outputDirectory>
+                            <imports>
+                                <import>${project.basedir}/src/main/resources/avro/Person.avsc</import>
+                            </imports>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--            ADD GENERATED FILES AS SOURCE-->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
