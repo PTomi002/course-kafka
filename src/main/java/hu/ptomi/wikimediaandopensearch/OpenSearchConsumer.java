@@ -1,4 +1,4 @@
-package hu.ptomi.complex.consumer;
+package hu.ptomi.wikimediaandopensearch;
 
 import com.google.gson.JsonParser;
 import hu.ptomi.Configuration;
@@ -72,7 +72,7 @@ public class OpenSearchConsumer {
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, Configuration.KAFKA_CONSUMER_GROUP);
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         properties.setProperty(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, CooperativeStickyAssignor.class.getName());
-        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+//        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
         var consumer = new KafkaConsumer<String, String>(properties);
 
@@ -87,7 +87,7 @@ public class OpenSearchConsumer {
 
             // polling records
             while (true) {
-                var records = consumer.poll(Duration.ofMillis(3 * 1_000));
+                var records = consumer.poll(Duration.ofMillis(5 * 1_000));
                 logger.info("received: " + records.count() + " records from kafka");
 
                 if (records.count() != 0) {
@@ -114,7 +114,7 @@ public class OpenSearchConsumer {
                     }
                 }
 
-                consumer.commitSync();
+//                consumer.commitSync();
             }
 
         } catch (IOException e) {

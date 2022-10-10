@@ -2,8 +2,11 @@ package hu.ptomi;
 
 public class Configuration {
     public static final String KAFKA_HOST = "127.0.0.1:9093";
-    public static final String KAFKA_TOPIC = "kafka_course_topic";
-    public static final String KAFKA_CONSUMER_GROUP = "my_first_consumer_group";
+    public static final String KAFKA_TOPIC = "kafka_course_t";
+    public static final String KAFKA_CONSUMER_GROUP = "kafka_course_cg";
+
+    public static final String KAFKA_STREAMS_APP_ID = "kafka_course_stats_application";
+    public static final String KAFKA_STREAMS_BOT_COUNT_TOPIC = KAFKA_TOPIC + "_" + "bot_count";
 
     public static final String OS_HOST = "localhost";
     public static final int OS_PORT = 9200;

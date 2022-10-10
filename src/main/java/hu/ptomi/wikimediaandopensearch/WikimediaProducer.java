@@ -1,4 +1,4 @@
-package hu.ptomi.complex.producer;
+package hu.ptomi.wikimediaandopensearch;
 
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.EventSource;
