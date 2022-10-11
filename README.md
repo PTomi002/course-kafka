@@ -14,6 +14,12 @@
 
 ## CLI Commands
 
+### Config
+`kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name first_topic --describe`<br />
+`kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name first_topic --alter --add-config min.insync.replicas=2`<br />
+`Dynamic configs for topic first_topic are:
+min.insync.replicas=2 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:min.insync.replicas=2, DEFAULT_CONFIG:min.insync.replicas=1}`<br />
+
 ### Topic
 
 `kafka-topics.sh --bootstrap-server localhost:9092 --list`<br />
